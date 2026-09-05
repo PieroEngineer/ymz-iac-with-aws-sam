@@ -1,0 +1,32 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Root Stack - Main Orchestrator
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues: [dev, staging, prod]
+
+Resources:
+  DynamoDBModule:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: ./nested/dynamodb.yaml
+      # Parameters:
+      #   Environment: !Ref Environment
+      #   TableReadCapacity: 12
+      #   TableWriteCapacity: 12
+
+Outputs:
+  DynamoDBTableName:
+    Description: Exported Table Name from Nested Stack
+    Value: !GetAtt DynamoDBModule.Outputs.TableName
+    Export:
+      Name: !Sub "${AWS::StackName}-DynamoDBTableName"
+
+  DynamoDBTableArn:
+    Description: Exported Table ARN from Nested Stack
+    Value: !GetAtt DynamoDBModule.Outputs.TableArn
+    Export:
+      Name: !Sub "${AWS::StackName}-DynamoDBTableArn"
