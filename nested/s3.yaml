@@ -1,0 +1,70 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Nested Stack - Amazon S3 Media Storage Module
+
+Parameters:
+  Environment:
+    Type: String
+    Description: Deployment environment (dev, staging, prod)
+
+Resources:
+  StorageBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      # S3 bucket names must be globally unique across all AWS accounts worldwide
+      BucketName: !Sub "yummizi-media-storage-${Environment}-${AWS::AccountId}"
+      
+      # Strict Security: Block 100% of public internet access at the bucket level
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+      # Encryption-at-Rest: Uses Amazon S3 Managed Keys (SSE-S3) for zero cost overhead
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+
+      # CORS: Enables web clients to perform direct PUT uploads via Lambda Presigned URLs
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders:
+              - '*'
+            AllowedMethods:
+              - GET
+              - PUT
+              - POST
+              - HEAD
+            AllowedOrigins:
+              - '*' # TODO: Replace with your web application's domain in production
+            MaxAge: 3600
+
+      # High Resiliency & Safety: Enable versioning to recover overwritten or deleted objects
+      VersioningConfiguration:
+        Status: Enabled
+
+      # Automatic Cost Cleanup: Prevents orphaned data accumulation
+      LifecycleConfiguration:
+        Rules:
+          - Id: AbortIncompleteUploads
+            Status: Enabled
+            AbortIncompleteMultipartUpload:
+              DaysAfterInitiation: 7
+          - Id: ExpireNoncurrentVersions
+            Status: Enabled
+            NoncurrentVersionExpiration:
+              NoncurrentDays: 30
+
+Outputs:
+  BucketName:
+    Description: S3 Storage Bucket Name
+    Value: !Ref StorageBucket
+  BucketArn:
+    Description: S3 Storage Bucket ARN
+    Value: !GetAtt StorageBucket.Arn
+  BucketRegionalDomainName:
+    Description: S3 Regional Domain Name (Required for CloudFront OAC origin setting)
+    Value: !GetAtt StorageBucket.RegionalDomainName

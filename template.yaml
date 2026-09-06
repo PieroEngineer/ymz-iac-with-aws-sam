@@ -23,6 +23,21 @@ Resources:
       Location: ./nested/cognito.yaml
       Parameters:
         Environment: !Ref Environment
+  S3Module:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: ./nested/s3.yaml
+      Parameters:
+        Environment: !Ref Environment
+  CloudFrontModule:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: ./nested/cloudfront.yaml
+      Parameters:
+        Environment: !Ref Environment
+        S3BucketName: !GetAtt S3Module.Outputs.BucketName
+        S3BucketArn: !GetAtt S3Module.Outputs.BucketArn
+        S3BucketRegionalDomainName: !GetAtt S3Module.Outputs.BucketRegionalDomainName
 
 Outputs:
   DynamoDBTableName:
@@ -54,3 +69,33 @@ Outputs:
     Value: !GetAtt CognitoModule.Outputs.UserPoolClientId
     Export:
       Name: !Sub "${AWS::StackName}-UserPoolClientId"
+
+  S3BucketName:
+    Description: Exported S3 Bucket Name
+    Value: !GetAtt S3Module.Outputs.BucketName
+    Export:
+      Name: !Sub "${AWS::StackName}-S3BucketName"
+
+  S3BucketArn:
+    Description: Exported S3 Bucket ARN
+    Value: !GetAtt S3Module.Outputs.BucketArn
+    Export:
+      Name: !Sub "${AWS::StackName}-S3BucketArn"
+
+  S3BucketRegionalDomainName:
+    Description: Exported S3 Regional Domain Name for CloudFront
+    Value: !GetAtt S3Module.Outputs.BucketRegionalDomainName
+    Export:
+      Name: !Sub "${AWS::StackName}-S3BucketRegionalDomainName"
+
+  CloudFrontDistributionId:
+    Description: Exported CloudFront Distribution ID
+    Value: !GetAtt CloudFrontModule.Outputs.DistributionId
+    Export:
+      Name: !Sub "${AWS::StackName}-CloudFrontDistributionId"
+
+  CloudFrontDomainName:
+    Description: Exported CloudFront Domain Name
+    Value: !GetAtt CloudFrontModule.Outputs.DomainName
+    Export:
+      Name: !Sub "${AWS::StackName}-CloudFrontDomainName"

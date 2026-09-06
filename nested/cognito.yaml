@@ -7,7 +7,7 @@ Parameters:
     Description: Deployment environment (dev, staging, prod)
 
 Resources:
-  UserPool:
+  UserPool: # It's always one
     Type: AWS::Cognito::UserPool
     DeletionPolicy: Retain
     UpdateReplacePolicy: Retain
@@ -32,7 +32,7 @@ Resources:
           - Name: verified_email
             Priority: 1
 
-  UserPoolClient:
+  UserPoolClient: # TODO: Divide it in customer and restaurant 
     Type: AWS::Cognito::UserPoolClient
     Properties:
       ClientName: !Sub "yummizi-${Environment}"

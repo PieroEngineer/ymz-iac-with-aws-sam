@@ -1,0 +1,84 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Nested Stack - Amazon CloudFront CDN with OAC Module
+
+Parameters:
+  Environment:
+    Type: String
+    Description: Deployment environment (dev, staging, prod)
+  S3BucketName:
+    Type: String
+    Description: S3 Storage Bucket Name
+  S3BucketArn:
+    Type: String
+    Description: S3 Storage Bucket ARN
+  S3BucketRegionalDomainName:
+    Type: String
+    Description: S3 Regional Domain Name
+
+Resources:
+  # 1. Origin Access Control (OAC): Modern security credential for CloudFront-to-S3 access
+  CloudFrontOAC:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub "app-media-oac-${Environment}"
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  # 2. CloudFront Global Distribution
+  MediaDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        Comment: !Sub "Media CDN for app (${Environment})"
+        # Cost Optimization: Use NA & Europe edge locations only for baseline environment
+        PriceClass: PriceClass_100
+        Origins:
+          - Id: S3MediaOrigin
+            DomainName: !Ref S3BucketRegionalDomainName
+            S3OriginConfig:
+              OriginAccessIdentity: "" # Required to be empty string when using modern OAC
+            OriginAccessControlId: !GetAtt CloudFrontOAC.Id
+        DefaultCacheBehavior:
+          TargetOriginId: S3MediaOrigin
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods:
+            - GET
+            - HEAD
+            - OPTIONS
+          CachedMethods:
+            - GET
+            - HEAD
+          Compress: true
+          # AWS Managed Policy: CachingOptimized (Aggressive caching for static assets)
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
+          # AWS Managed Policy: CORS-S3Origin (Passes CORS headers properly from S3)
+          OriginRequestPolicyId: 88a5eaf1-0034-42db-b356-8a08f65c7821
+
+  # 3. S3 Bucket Policy: Grants read access strictly to this specific CloudFront Distribution
+  S3BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref S3BucketName
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowCloudFrontServicePrincipalReadOnly
+            Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: s3:GetObject
+            Resource: !Sub "${S3BucketArn}/*"
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${MediaDistribution}"
+
+Outputs:
+  DistributionId:
+    Description: CloudFront Distribution ID
+    Value: !Ref MediaDistribution
+  DomainName:
+    Description: CloudFront Domain Name (e.g. d111111abcdef8.cloudfront.net)
+    Value: !GetAtt MediaDistribution.DomainName
