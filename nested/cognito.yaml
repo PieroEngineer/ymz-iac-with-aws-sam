@@ -12,7 +12,7 @@ Resources:
     DeletionPolicy: Retain
     UpdateReplacePolicy: Retain
     Properties:
-      UserPoolName: !Sub "yummizi-${Environment}"
+      UserPoolName: !Sub "yummizi-user-pool-${Environment}"
       UsernameAttributes:
         - email
       AutoVerifiedAttributes:
@@ -35,7 +35,7 @@ Resources:
   UserPoolClient: # TODO: Divide it in customer and restaurant 
     Type: AWS::Cognito::UserPoolClient
     Properties:
-      ClientName: !Sub "yummizi-${Environment}"
+      ClientName: !Sub "yummizi-web-client-${Environment}"
       UserPoolId: !Ref UserPool
       GenerateSecret: false
       ExplicitAuthFlows:

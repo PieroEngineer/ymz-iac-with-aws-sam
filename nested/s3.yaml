@@ -33,7 +33,7 @@ Resources:
         CorsRules:
           - AllowedHeaders:
               - '*'
-            AllowedMethods:
+            AllowedMethods: ## Perhaps "DELETE" will be needed later too
               - GET
               - PUT
               - POST

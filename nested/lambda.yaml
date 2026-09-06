@@ -1,0 +1,90 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Nested Stack - AWS Lambda Compute Module (Hono Microservices)
+
+Parameters:
+  Environment:
+    Type: String
+    Description: Deployment environment (dev, staging, prod)
+  DynamoDBTableName:
+    Type: String
+    Description: DynamoDB Table Name
+  DynamoDBTableArn:
+    Type: String
+    Description: DynamoDB Table ARN
+  S3BucketName:
+    Type: String
+    Description: S3 Storage Bucket Name
+  S3BucketArn:
+    Type: String
+    Description: S3 Storage Bucket ARN
+
+# Global defaults applied to all SAM Lambda functions in this template
+Globals:
+  Function:
+    Runtime: nodejs24.x
+    Architectures:
+      - arm64 # AWS Graviton2 processor for higher performance and lower cost
+    Timeout: 10 # Seconds
+    MemorySize: 512 # MB
+    Environment:
+      Variables:
+        ENV: !Ref Environment
+        TABLE_NAME: !Ref DynamoDBTableName
+        BUCKET_NAME: !Ref S3BucketName
+        NODE_ENV: production
+
+Resources:
+  # ========================================================================= ##
+  # MICROSERVICE 1: User & Core Business Operations
+  # =========================================================================
+  UsersMicroserviceFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "yummizi-users-service-${Environment}"
+      CodeUri: ../src/users/ # Path to your local Hono code directory
+      Handler: index.handler # Entrypoint (e.g., export const handler = handle(app))
+      Description: Hono microservice handling user profiles and application state
+      Policies:
+        # Least-Privilege IAM: Scope access strictly to the single DynamoDB table
+        - Statement:
+            - Sid: DynamoDBTableAccess
+              Effect: Allow
+              Action:
+                - dynamodb:GetItem
+                - dynamodb:PutItem
+                - dynamodb:UpdateItem
+                - dynamodb:DeleteItem
+                - dynamodb:Query
+              Resource:
+                - !Ref DynamoDBTableArn
+                - !Sub "${DynamoDBTableArn}/index/*"
+
+  # ========================================================================= ##
+  # MICROSERVICE 2: Media & S3 Presigned URL Generator
+  # =========================================================================
+  MediaMicroserviceFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "yummizi-media-service-${Environment}"
+      CodeUri: ../src/media/ # Path to your local media Hono code directory
+      Handler: index.handler
+      Description: Hono microservice generating S3 Presigned URLs for client uploads
+      Policies:
+        # Least-Privilege IAM: Grant put/get permissions strictly inside the S3 bucket
+        - Statement:
+            - Sid: S3DirectObjectAccess
+              Effect: Allow
+              Action:
+                - s3:PutObject
+                - s3:GetObject
+              Resource: !Sub "${S3BucketArn}/*"
+
+Outputs:
+  UsersFunctionArn:
+    Description: Users Microservice Lambda ARN
+    Value: !GetAtt UsersMicroserviceFunction.Arn
+
+  MediaFunctionArn:
+    Description: Media Microservice Lambda ARN
+    Value: !GetAtt MediaMicroserviceFunction.Arn
