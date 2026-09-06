@@ -1,10 +1,10 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: Nested Stack - DynamoDB Single-Table Module
 
-# Parameters:
-#   Environment:
-#     Type: String
-#     Description: Deployment environment (dev, staging, prod)
+Parameters:
+  Environment:
+    Type: String
+    Description: Deployment environment (dev, staging, prod)
 #   TableReadCapacity:
 #     Type: Number
 #     Default: 12
@@ -21,8 +21,8 @@ Resources:
       TableName: "YummiziTable"
       BillingMode: PROVISIONED
       ProvisionedThroughput:
-        ReadCapacityUnits: 20
-        WriteCapacityUnits: 20
+        ReadCapacityUnits: 13
+        WriteCapacityUnits: 13
       AttributeDefinitions:
         - AttributeName: PK
           AttributeType: S
@@ -42,7 +42,7 @@ Resources:
         - AttributeName: SK
           KeyType: RANGE
       GlobalSecondaryIndexes:
-        - IndexName: "YummiziGsiTable"
+        - IndexName: !Sub "YummiziGsiTable-${Environment}"
           KeySchema:
             - AttributeName: GSIPK
               KeyType: HASH
@@ -51,8 +51,8 @@ Resources:
           Projection:
             ProjectionType: ALL
           ProvisionedThroughput:
-            ReadCapacityUnits: 2
-            WriteCapacityUnits: 2
+            ReadCapacityUnits: 6
+            WriteCapacityUnits: 6
         - IndexName: "YummiziGsi2Table"
           KeySchema:
             - AttributeName: GSI2PK
@@ -62,8 +62,8 @@ Resources:
           Projection:
             ProjectionType: KEYS_ONLY
           ProvisionedThroughput:
-            ReadCapacityUnits: 2
-            WriteCapacityUnits: 2
+            ReadCapacityUnits: 6
+            WriteCapacityUnits: 6
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: false  ## Consider turn it true in production
       SSESpecification:

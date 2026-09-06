@@ -13,10 +13,16 @@ Resources:
     Type: AWS::Serverless::Application
     Properties:
       Location: ./nested/dynamodb.yaml
-      # Parameters:
-      #   Environment: !Ref Environment
+      Parameters:
+        Environment: !Ref Environment
       #   TableReadCapacity: 12
       #   TableWriteCapacity: 12
+  CognitoModule:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: ./nested/cognito.yaml
+      Parameters:
+        Environment: !Ref Environment
 
 Outputs:
   DynamoDBTableName:
@@ -30,3 +36,21 @@ Outputs:
     Value: !GetAtt DynamoDBModule.Outputs.TableArn
     Export:
       Name: !Sub "${AWS::StackName}-DynamoDBTableArn"
+
+  UserPoolId:
+    Description: Cognito User Pool ID
+    Value: !GetAtt CognitoModule.Outputs.UserPoolId
+    Export:
+      Name: !Sub "${AWS::StackName}-UserPoolId"
+
+  UserPoolArn:
+    Description: Cognito User Pool ARN
+    Value: !GetAtt CognitoModule.Outputs.UserPoolArn
+    Export:
+      Name: !Sub "${AWS::StackName}-UserPoolArn"
+
+  UserPoolClientId:
+    Description: Cognito User Pool Client ID
+    Value: !GetAtt CognitoModule.Outputs.UserPoolClientId
+    Export:
+      Name: !Sub "${AWS::StackName}-UserPoolClientId"
