@@ -9,7 +9,7 @@ Parameters:
 Resources:
   UserPool: # It's always one
     Type: AWS::Cognito::UserPool
-    DeletionPolicy: Retain
+    DeletionPolicy: Delete  #ANCHOR: Change "Delete" by "Retain"
     UpdateReplacePolicy: Retain
     Properties:
       UserPoolName: !Sub "yummizi-user-pool-${Environment}"

@@ -48,6 +48,16 @@ Resources:
         DynamoDBTableArn: !GetAtt DynamoDBModule.Outputs.TableArn
         S3BucketName: !GetAtt S3Module.Outputs.BucketName
         S3BucketArn: !GetAtt S3Module.Outputs.BucketArn
+  ApiGatewayModule:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: ./nested/apigateway.yaml
+      Parameters:
+        Environment: !Ref Environment
+        UserPoolId: !GetAtt CognitoModule.Outputs.UserPoolId
+        UserPoolClientId: !GetAtt CognitoModule.Outputs.UserPoolClientId
+        UsersFunctionArn: !GetAtt LambdaModule.Outputs.UsersFunctionArn
+        MediaFunctionArn: !GetAtt LambdaModule.Outputs.MediaFunctionArn
 
 Outputs:
   DynamoDBTableName:
@@ -117,3 +127,9 @@ Outputs:
   MediaFunctionArn: ##
     Description: Media Lambda Function ARN
     Value: !GetAtt LambdaModule.Outputs.MediaFunctionArn
+
+  ApiEndpointUrl:
+    Description: Final Production API Gateway Endpoint URL
+    Value: !GetAtt ApiGatewayModule.Outputs.ApiEndpoint
+    Export:
+      Name: !Sub "${AWS::StackName}-ApiEndpointUrl"

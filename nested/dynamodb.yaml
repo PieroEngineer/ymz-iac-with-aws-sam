@@ -15,7 +15,7 @@ Parameters:
 Resources:
   SingleDataTable:
     Type: AWS::DynamoDB::Table
-    DeletionPolicy: Retain
+    DeletionPolicy: Delete  #ANCHOR: Change "Delete" by "Retain"
     UpdateReplacePolicy: Retain
     Properties:
       TableName: "YummiziTable"
