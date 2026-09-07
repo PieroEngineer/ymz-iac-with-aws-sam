@@ -35,18 +35,14 @@ Globals:
         NODE_ENV: production
 
 Resources:
-  # ========================================================================= ##
-  # MICROSERVICE 1: User & Core Business Operations
-  # =========================================================================
-  UsersMicroserviceFunction:
+  YummiziEngineFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Sub "yummizi-users-service-${Environment}"
-      CodeUri: ../src/users/ # Path to your local Hono code directory
-      Handler: index.handler # Entrypoint (e.g., export const handler = handle(app))
-      Description: Hono microservice handling user profiles and application state
+      FunctionName: !Sub "yummizi-engine-${Environment}"
+      CodeUri: ../ #FIXME Points to the directory containing package.json & src/
+      Handler: src/index.handler
+      Description: Monolithic Hono backend engine
       Policies:
-        # Least-Privilege IAM: Scope access strictly to the single DynamoDB table
         - Statement:
             - Sid: DynamoDBTableAccess
               Effect: Allow
@@ -59,32 +55,21 @@ Resources:
               Resource:
                 - !Ref DynamoDBTableArn
                 - !Sub "${DynamoDBTableArn}/index/*"
-
-  # ========================================================================= ##
-  # MICROSERVICE 2: Media & S3 Presigned URL Generator
-  # =========================================================================
-  MediaMicroserviceFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: !Sub "yummizi-media-service-${Environment}"
-      CodeUri: ../src/media/ # Path to your local media Hono code directory
-      Handler: index.handler
-      Description: Hono microservice generating S3 Presigned URLs for client uploads
-      Policies:
-        # Least-Privilege IAM: Grant put/get permissions strictly inside the S3 bucket
-        - Statement:
-            - Sid: S3DirectObjectAccess
+            - Sid: S3DirectAccess
               Effect: Allow
               Action:
                 - s3:PutObject
                 - s3:GetObject
               Resource: !Sub "${S3BucketArn}/*"
-
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: "node24"
+        EntryPoints:
+          - src/index.ts
+          
 Outputs:
-  UsersFunctionArn:
+  YummiziFunctionArn:
     Description: Users Microservice Lambda ARN
-    Value: !GetAtt UsersMicroserviceFunction.Arn
-
-  MediaFunctionArn:
-    Description: Media Microservice Lambda ARN
-    Value: !GetAtt MediaMicroserviceFunction.Arn
+    Value: !GetAtt YummiziEngineFunction.Arn

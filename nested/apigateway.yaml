@@ -12,12 +12,9 @@ Parameters:
   UserPoolClientId:
     Type: String
     Description: Cognito User Pool Client ID
-  UsersFunctionArn:
+  YummiziFunctionArn:
     Type: String
-    Description: Users Microservice Lambda ARN
-  MediaFunctionArn:
-    Type: String
-    Description: Media Microservice Lambda ARN
+    Description: Yummizi Microservice Lambda ARN
 
 Resources:
   # 1. API Gateway HTTP API Definition with Native Cognito JWT Authorizer
@@ -32,7 +29,7 @@ Resources:
           - POST
           - PUT
           - DELETE
-          - OPTIONS
+          # - OPTIONS
         AllowHeaders:
           - Authorization
           - Content-Type
@@ -49,57 +46,27 @@ Resources:
                 - !Ref UserPoolClientId
             IdentitySource: "$request.header.Authorization"
 
-  # =========================================================================
-  # INTEGRATIONS & ROUTES: Users Microservice
-  # =========================================================================
-  UsersIntegration:
+  EngineIntegration:
     Type: AWS::ApiGatewayV2::Integration
     Properties:
       ApiId: !Ref HttpApi
       IntegrationType: AWS_PROXY
-      IntegrationUri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${UsersFunctionArn}/invocations"
+      IntegrationUri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${YummiziFunctionArn}/invocations"
       PayloadFormatVersion: "2.0"
 
-  UsersRoute:
+  EngineProxyRoute:
     Type: AWS::ApiGatewayV2::Route
     Properties:
       ApiId: !Ref HttpApi
-      RouteKey: "ANY /users/{proxy+}"
-      Target: !Sub "integrations/${UsersIntegration}"
+      RouteKey: "ANY /{proxy+}"
+      Target: !Sub "integrations/${EngineIntegration}"
 
-  UsersLambdaPermission:
-    Type: AWS::Lambda::Permission
-    Properties:
-      Action: lambda:InvokeFunction
-      FunctionName: !Ref UsersFunctionArn
-      Principal: apigateway.amazonaws.com
-      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*/*"
-
-  # =========================================================================
-  # INTEGRATIONS & ROUTES: Media Microservice
-  # =========================================================================
-  MediaIntegration:
-    Type: AWS::ApiGatewayV2::Integration
-    Properties:
-      ApiId: !Ref HttpApi
-      IntegrationType: AWS_PROXY
-      IntegrationUri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${MediaFunctionArn}/invocations"
-      PayloadFormatVersion: "2.0"
-
-  MediaRoute:
+  EngineRootRoute:
     Type: AWS::ApiGatewayV2::Route
     Properties:
       ApiId: !Ref HttpApi
-      RouteKey: "ANY /media/{proxy+}"
-      Target: !Sub "integrations/${MediaIntegration}"
-
-  MediaLambdaPermission:
-    Type: AWS::Lambda::Permission
-    Properties:
-      Action: lambda:InvokeFunction
-      FunctionName: !Ref MediaFunctionArn
-      Principal: apigateway.amazonaws.com
-      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*/*"
+      RouteKey: "ANY /"
+      Target: !Sub "integrations/${EngineIntegration}"
 
 Outputs:
   ApiEndpoint:

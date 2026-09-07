@@ -56,8 +56,7 @@ Resources:
         Environment: !Ref Environment
         UserPoolId: !GetAtt CognitoModule.Outputs.UserPoolId
         UserPoolClientId: !GetAtt CognitoModule.Outputs.UserPoolClientId
-        UsersFunctionArn: !GetAtt LambdaModule.Outputs.UsersFunctionArn
-        MediaFunctionArn: !GetAtt LambdaModule.Outputs.MediaFunctionArn
+        YummiziFunctionArn: !GetAtt LambdaModule.Outputs.YummiziFunctionArn
 
 Outputs:
   DynamoDBTableName:
@@ -120,13 +119,9 @@ Outputs:
     Export:
       Name: !Sub "${AWS::StackName}-CloudFrontDomainName"
 
-  UsersFunctionArn: ##
-    Description: Users Lambda Function ARN
-    Value: !GetAtt LambdaModule.Outputs.UsersFunctionArn
-
-  MediaFunctionArn: ##
-    Description: Media Lambda Function ARN
-    Value: !GetAtt LambdaModule.Outputs.MediaFunctionArn
+  YummiziFunctionArn:
+    Description: Yummizi Lambda FunctionArn ARN
+    Value: !GetAtt LambdaModule.Outputs.YummiziFunctionArn
 
   ApiEndpointUrl:
     Description: Final Production API Gateway Endpoint URL
