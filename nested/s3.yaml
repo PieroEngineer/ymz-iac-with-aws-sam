@@ -9,7 +9,7 @@ Parameters:
 Resources:
   StorageBucket:
     Type: AWS::S3::Bucket
-    DeletionPolicy: Delete  #ANCHOR: Change "Delete" by "Retain"
+    DeletionPolicy: Delete  #ANCHOR: Change "Delete" by "Retain" in production
     UpdateReplacePolicy: Retain
     Properties:
       # S3 bucket names must be globally unique across all AWS accounts worldwide
