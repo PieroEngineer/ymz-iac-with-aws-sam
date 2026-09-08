@@ -18,6 +18,9 @@ Parameters:
   S3BucketArn:
     Type: String
     Description: S3 Storage Bucket ARN
+  CloudFrontDomainName:
+    Type: String
+    Description: Domain name of the CloudFront distribution for media assets
 
 # Global defaults applied to all SAM Lambda functions in this template
 Globals:
@@ -29,17 +32,18 @@ Globals:
     MemorySize: 512 # MB
     Environment:
       Variables:
+        CDN_DOMAIN: !Ref CloudFrontDomainName
         ENV: !Ref Environment
         TABLE_NAME: !Ref DynamoDBTableName
         BUCKET_NAME: !Ref S3BucketName
-        NODE_ENV: production
+        NODE_ENV: production  ## Dev?
 
 Resources:
   YummiziEngineFunction:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Sub "yummizi-engine-${Environment}"
-      CodeUri: ../ #FIXME Points to the directory containing package.json & src/
+      CodeUri: C:/Users/HP/Desktop/Directs/ymz_be_hono/ # Points to the directory containing package.json & src/
       Handler: src/index.handler
       Description: Monolithic Hono backend engine
       Policies:
@@ -65,7 +69,9 @@ Resources:
       BuildMethod: esbuild
       BuildProperties:
         Minify: true
+        Format: "esm"
         Target: "node24"
+        Sourcemap: false ## Necessary?
         EntryPoints:
           - src/index.ts
           

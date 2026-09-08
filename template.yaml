@@ -48,6 +48,7 @@ Resources:
         DynamoDBTableArn: !GetAtt DynamoDBModule.Outputs.TableArn
         S3BucketName: !GetAtt S3Module.Outputs.BucketName
         S3BucketArn: !GetAtt S3Module.Outputs.BucketArn
+        CloudFrontDomainName: !GetAtt CloudFrontModule.Outputs.DomainName
   ApiGatewayModule:
     Type: AWS::Serverless::Application
     Properties:
