@@ -1,0 +1,216 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Root Stack - Main Orchestrator
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues:
+    - dev
+    - staging
+    - prod
+Resources:
+  DynamoDBModule:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: DynamoDBModule\template.yaml
+      Parameters:
+        Environment:
+          Ref: Environment
+    Metadata:
+      SamResourceId: DynamoDBModule
+  CognitoModule:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: CognitoModule\template.yaml
+      Parameters:
+        Environment:
+          Ref: Environment
+    Metadata:
+      SamResourceId: CognitoModule
+  S3Module:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: S3Module\template.yaml
+      Parameters:
+        Environment:
+          Ref: Environment
+    Metadata:
+      SamResourceId: S3Module
+  CloudFrontModule:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: CloudFrontModule\template.yaml
+      Parameters:
+        Environment:
+          Ref: Environment
+        S3BucketName:
+          Fn::GetAtt:
+          - S3Module
+          - Outputs.BucketName
+        S3BucketArn:
+          Fn::GetAtt:
+          - S3Module
+          - Outputs.BucketArn
+        S3BucketRegionalDomainName:
+          Fn::GetAtt:
+          - S3Module
+          - Outputs.BucketRegionalDomainName
+    Metadata:
+      SamResourceId: CloudFrontModule
+  LambdaModule:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: LambdaModule\template.yaml
+      Parameters:
+        Environment:
+          Ref: Environment
+        DynamoDBTableName:
+          Fn::GetAtt:
+          - DynamoDBModule
+          - Outputs.TableName
+        DynamoDBTableArn:
+          Fn::GetAtt:
+          - DynamoDBModule
+          - Outputs.TableArn
+        S3BucketName:
+          Fn::GetAtt:
+          - S3Module
+          - Outputs.BucketName
+        S3BucketArn:
+          Fn::GetAtt:
+          - S3Module
+          - Outputs.BucketArn
+        CloudFrontDomainName:
+          Fn::GetAtt:
+          - CloudFrontModule
+          - Outputs.DomainName
+    Metadata:
+      SamResourceId: LambdaModule
+  ApiGatewayModule:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: ApiGatewayModule\template.yaml
+      Parameters:
+        Environment:
+          Ref: Environment
+        UserPoolId:
+          Fn::GetAtt:
+          - CognitoModule
+          - Outputs.UserPoolId
+        UserPoolClientId:
+          Fn::GetAtt:
+          - CognitoModule
+          - Outputs.UserPoolClientId
+        YummiziFunctionArn:
+          Fn::GetAtt:
+          - LambdaModule
+          - Outputs.YummiziFunctionArn
+    Metadata:
+      SamResourceId: ApiGatewayModule
+Outputs:
+  DynamoDBTableName:
+    Description: Exported Table Name from Nested Stack
+    Value:
+      Fn::GetAtt:
+      - DynamoDBModule
+      - Outputs.TableName
+    Export:
+      Name:
+        Fn::Sub: ${AWS::StackName}-DynamoDBTableName
+  DynamoDBTableArn:
+    Description: Exported Table ARN from Nested Stack
+    Value:
+      Fn::GetAtt:
+      - DynamoDBModule
+      - Outputs.TableArn
+    Export:
+      Name:
+        Fn::Sub: ${AWS::StackName}-DynamoDBTableArn
+  UserPoolId:
+    Description: Cognito User Pool ID
+    Value:
+      Fn::GetAtt:
+      - CognitoModule
+      - Outputs.UserPoolId
+    Export:
+      Name:
+        Fn::Sub: ${AWS::StackName}-UserPoolId
+  UserPoolArn:
+    Description: Cognito User Pool ARN
+    Value:
+      Fn::GetAtt:
+      - CognitoModule
+      - Outputs.UserPoolArn
+    Export:
+      Name:
+        Fn::Sub: ${AWS::StackName}-UserPoolArn
+  UserPoolClientId:
+    Description: Cognito User Pool Client ID
+    Value:
+      Fn::GetAtt:
+      - CognitoModule
+      - Outputs.UserPoolClientId
+    Export:
+      Name:
+        Fn::Sub: ${AWS::StackName}-UserPoolClientId
+  S3BucketName:
+    Description: Exported S3 Bucket Name
+    Value:
+      Fn::GetAtt:
+      - S3Module
+      - Outputs.BucketName
+    Export:
+      Name:
+        Fn::Sub: ${AWS::StackName}-S3BucketName
+  S3BucketArn:
+    Description: Exported S3 Bucket ARN
+    Value:
+      Fn::GetAtt:
+      - S3Module
+      - Outputs.BucketArn
+    Export:
+      Name:
+        Fn::Sub: ${AWS::StackName}-S3BucketArn
+  S3BucketRegionalDomainName:
+    Description: Exported S3 Regional Domain Name for CloudFront
+    Value:
+      Fn::GetAtt:
+      - S3Module
+      - Outputs.BucketRegionalDomainName
+    Export:
+      Name:
+        Fn::Sub: ${AWS::StackName}-S3BucketRegionalDomainName
+  CloudFrontDistributionId:
+    Description: Exported CloudFront Distribution ID
+    Value:
+      Fn::GetAtt:
+      - CloudFrontModule
+      - Outputs.DistributionId
+    Export:
+      Name:
+        Fn::Sub: ${AWS::StackName}-CloudFrontDistributionId
+  CloudFrontDomainName:
+    Description: Exported CloudFront Domain Name
+    Value:
+      Fn::GetAtt:
+      - CloudFrontModule
+      - Outputs.DomainName
+    Export:
+      Name:
+        Fn::Sub: ${AWS::StackName}-CloudFrontDomainName
+  YummiziFunctionArn:
+    Description: Yummizi Lambda FunctionArn ARN
+    Value:
+      Fn::GetAtt:
+      - LambdaModule
+      - Outputs.YummiziFunctionArn
+  ApiEndpointUrl:
+    Description: Final Production API Gateway Endpoint URL
+    Value:
+      Fn::GetAtt:
+      - ApiGatewayModule
+      - Outputs.ApiEndpoint
+    Export:
+      Name:
+        Fn::Sub: ${AWS::StackName}-ApiEndpointUrl

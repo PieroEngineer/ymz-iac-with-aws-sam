@@ -1,0 +1,74 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Nested Stack - DynamoDB Single-Table Module
+Parameters:
+  Environment:
+    Type: String
+    Description: Deployment environment (dev, staging, prod)
+Resources:
+  SingleDataTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: YummiziTable
+      BillingMode: PROVISIONED
+      ProvisionedThroughput:
+        ReadCapacityUnits: 13
+        WriteCapacityUnits: 13
+      AttributeDefinitions:
+      - AttributeName: PK
+        AttributeType: S
+      - AttributeName: SK
+        AttributeType: S
+      - AttributeName: GSIPK
+        AttributeType: S
+      - AttributeName: GSISK
+        AttributeType: S
+      - AttributeName: GSI2PK
+        AttributeType: S
+      - AttributeName: GSI2SK
+        AttributeType: S
+      KeySchema:
+      - AttributeName: PK
+        KeyType: HASH
+      - AttributeName: SK
+        KeyType: RANGE
+      GlobalSecondaryIndexes:
+      - IndexName:
+          Fn::Sub: YummiziGsiTable-${Environment}
+        KeySchema:
+        - AttributeName: GSIPK
+          KeyType: HASH
+        - AttributeName: GSISK
+          KeyType: RANGE
+        Projection:
+          ProjectionType: ALL
+        ProvisionedThroughput:
+          ReadCapacityUnits: 6
+          WriteCapacityUnits: 6
+      - IndexName: YummiziGsi2Table
+        KeySchema:
+        - AttributeName: GSI2PK
+          KeyType: HASH
+        - AttributeName: GSI2SK
+          KeyType: RANGE
+        Projection:
+          ProjectionType: KEYS_ONLY
+        ProvisionedThroughput:
+          ReadCapacityUnits: 6
+          WriteCapacityUnits: 6
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: false
+      SSESpecification:
+        SSEEnabled: true
+Outputs:
+  TableName:
+    Description: DynamoDB Table Name
+    Value:
+      Ref: SingleDataTable
+  TableArn:
+    Description: DynamoDB Table ARN
+    Value:
+      Fn::GetAtt:
+      - SingleDataTable
+      - Arn
