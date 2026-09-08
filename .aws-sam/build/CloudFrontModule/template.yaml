@@ -35,8 +35,7 @@ Resources:
         - Id: S3MediaOrigin
           DomainName:
             Ref: S3BucketRegionalDomainName
-          S3OriginConfig:
-            OriginAccessIdentity: ''
+          S3OriginConfig: {}
           OriginAccessControlId:
             Fn::GetAtt:
             - CloudFrontOAC
@@ -53,7 +52,7 @@ Resources:
           - HEAD
           Compress: true
           CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
-          OriginRequestPolicyId: 88a5eaf1-0034-42db-b356-8a08f65c7821
+          OriginRequestPolicyId: 88a5eaf4-2fd4-4709-b370-b4c650ea3fcf
   S3BucketPolicy:
     Type: AWS::S3::BucketPolicy
     Properties:

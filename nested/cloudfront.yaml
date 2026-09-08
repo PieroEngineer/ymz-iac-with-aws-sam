@@ -38,8 +38,7 @@ Resources:
         Origins:
           - Id: S3MediaOrigin
             DomainName: !Ref S3BucketRegionalDomainName
-            S3OriginConfig:
-              OriginAccessIdentity: "" # Required to be empty string when using modern OAC
+            S3OriginConfig: {}
             OriginAccessControlId: !GetAtt CloudFrontOAC.Id
         DefaultCacheBehavior:
           TargetOriginId: S3MediaOrigin
@@ -55,7 +54,7 @@ Resources:
           # AWS Managed Policy: CachingOptimized (Aggressive caching for static assets)
           CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
           # AWS Managed Policy: CORS-S3Origin (Passes CORS headers properly from S3)
-          OriginRequestPolicyId: 88a5eaf1-0034-42db-b356-8a08f65c7821
+          OriginRequestPolicyId: 88a5eaf4-2fd4-4709-b370-b4c650ea3fcf
 
   # 3. S3 Bucket Policy: Grants read access strictly to this specific CloudFront Distribution
   S3BucketPolicy:

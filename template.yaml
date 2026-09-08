@@ -72,7 +72,7 @@ Outputs:
     Export:
       Name: !Sub "${AWS::StackName}-DynamoDBTableArn"
 
-  UserPoolId:
+  UserPoolId: #
     Description: Cognito User Pool ID
     Value: !GetAtt CognitoModule.Outputs.UserPoolId
     Export:
@@ -84,7 +84,7 @@ Outputs:
     Export:
       Name: !Sub "${AWS::StackName}-UserPoolArn"
 
-  UserPoolClientId:
+  UserPoolClientId: #
     Description: Cognito User Pool Client ID
     Value: !GetAtt CognitoModule.Outputs.UserPoolClientId
     Export:
@@ -124,7 +124,7 @@ Outputs:
     Description: Yummizi Lambda FunctionArn ARN
     Value: !GetAtt LambdaModule.Outputs.YummiziFunctionArn
 
-  ApiEndpointUrl:
+  ApiEndpointUrl: #
     Description: Final Production API Gateway Endpoint URL
     Value: !GetAtt ApiGatewayModule.Outputs.ApiEndpoint
     Export:
