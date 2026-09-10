@@ -1,77 +1,52 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Transform: AWS::Serverless-2016-10-31
 Description: Nested Stack - API Gateway HTTP API (v2) Module
 
 Parameters:
   Environment:
     Type: String
-    Description: Deployment environment (dev, staging, prod)
   UserPoolId:
     Type: String
-    Description: Cognito User Pool ID
   UserPoolClientId:
     Type: String
-    Description: Cognito User Pool Client ID
-  YummiziFunctionArn:
-    Type: String
-    Description: Yummizi Microservice Lambda ARN
 
 Resources:
-  # 1. API Gateway HTTP API Definition with Native Cognito JWT Authorizer
   HttpApi:
-    Type: AWS::Serverless::HttpApi
+    Type: AWS::ApiGatewayV2::Api
     Properties:
       Name: !Sub "yummizi-http-api-${Environment}"
-      StageName: !Ref Environment
+      ProtocolType: HTTP
       CorsConfiguration:
-        AllowMethods:
-          - GET
-          - POST
-          - PUT
-          - DELETE
-          # - OPTIONS
-        AllowHeaders:
-          - Authorization
-          - Content-Type
         AllowOrigins:
-          - '*' # Replace with frontend domain in production
-        MaxAge: 3600
-      Auth:
-        DefaultAuthorizer: CognitoJwtAuthorizer
-        Authorizers:
-          CognitoJwtAuthorizer:
-            JwtConfiguration:
-              issuer: !Sub "https://cognito-idp.${AWS::Region}.amazonaws.com/${UserPoolId}"
-              audience:
-                - !Ref UserPoolClientId
-            IdentitySource: "$request.header.Authorization"
+          - "http://localhost:5173"
+        AllowMethods: [GET, POST, PUT, PATCH, DELETE, OPTIONS]
+        AllowHeaders: [Authorization, Content-Type]
+        AllowCredentials: true
+        MaxAge: 86400
 
-  EngineIntegration:
-    Type: AWS::ApiGatewayV2::Integration
+  HttpApiStage:
+    Type: AWS::ApiGatewayV2::Stage
     Properties:
       ApiId: !Ref HttpApi
-      IntegrationType: AWS_PROXY
-      IntegrationUri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${YummiziFunctionArn}/invocations"
-      PayloadFormatVersion: "2.0"
+      StageName: !Ref Environment
+      AutoDeploy: true          # each new deployed Route/Integration goes live without a manual Deployment resource
 
-  EngineProxyRoute:
-    Type: AWS::ApiGatewayV2::Route
+  CognitoJwtAuthorizer:
+    Type: AWS::ApiGatewayV2::Authorizer
     Properties:
       ApiId: !Ref HttpApi
-      RouteKey: "ANY /{proxy+}"
-      Target: !Sub "integrations/${EngineIntegration}"
-
-  EngineRootRoute:
-    Type: AWS::ApiGatewayV2::Route
-    Properties:
-      ApiId: !Ref HttpApi
-      RouteKey: "ANY /"
-      Target: !Sub "integrations/${EngineIntegration}"
+      Name: CognitoJwtAuthorizer
+      AuthorizerType: JWT
+      IdentitySource:
+        - "$request.header.Authorization"
+      JwtConfiguration:
+        Audience:
+          - !Ref UserPoolClientId
+        Issuer: !Sub "https://cognito-idp.${AWS::Region}.amazonaws.com/${UserPoolId}"
 
 Outputs:
-  ApiEndpoint:
-    Description: HTTP API Gateway Endpoint URL
-    Value: !Sub "https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}"
   ApiId:
-    Description: HTTP API Gateway ID
     Value: !Ref HttpApi
+  AuthorizerId:
+    Value: !Ref CognitoJwtAuthorizer
+  ApiEndpoint:
+    Value: !Sub "https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}"

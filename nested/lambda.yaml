@@ -3,50 +3,68 @@ Transform: AWS::Serverless-2016-10-31
 Description: Nested Stack - AWS Lambda Compute Module (Hono Microservices)
 
 Parameters:
-  Environment:
-    Type: String
-    Description: Deployment environment (dev, staging, prod)
-  DynamoDBTableName:
-    Type: String
-    Description: DynamoDB Table Name
-  DynamoDBTableArn:
-    Type: String
-    Description: DynamoDB Table ARN
-  S3BucketName:
-    Type: String
-    Description: S3 Storage Bucket Name
-  S3BucketArn:
-    Type: String
-    Description: S3 Storage Bucket ARN
-  CloudFrontDomainName:
-    Type: String
-    Description: Domain name of the CloudFront distribution for media assets
+    Environment:
+      Type: String
+      Description: Deployment environment (dev, staging, prod)
+    DynamoDBTableName:
+      Type: String
+      Description: DynamoDB Table Name
+    DynamoDBTableArn:
+      Type: String
+      Description: DynamoDB Table ARN
+    S3BucketName:
+      Type: String
+      Description: S3 Storage Bucket Name
+    S3BucketArn:
+      Type: String
+      Description: S3 Storage Bucket ARN
+    CloudFrontDomainName:
+      Type: String
+      Description: Domain name of the CloudFront distribution for media assets
+    ApiId:
+      Type: String
+    AuthorizerId:
+      Type: String
+
 
 # Global defaults applied to all SAM Lambda functions in this template
-Globals:
-  Function:
-    Runtime: nodejs24.x
-    Architectures:
-      - arm64 # AWS Graviton2 processor for higher performance and lower cost
-    Timeout: 10 # Seconds
-    MemorySize: 512 # MB
-    Environment:
-      Variables:
-        CDN_DOMAIN: !Ref CloudFrontDomainName
-        ENV: !Ref Environment
-        TABLE_NAME: !Ref DynamoDBTableName
-        BUCKET_NAME: !Ref S3BucketName
-        NODE_ENV: production  ## Dev?
+# Globals:
+#   Function:
+#     Runtime: nodejs24.x
+#     Architectures:
+#       - arm64 # AWS Graviton2 processor for higher performance and lower cost
+#     Timeout: 10 # Seconds
+#     MemorySize: 512 # MB
+#     Environment:
+#       Variables:
+#         CDN_DOMAIN: !Ref CloudFrontDomainName
+#         ENV: !Ref Environment
+#         TABLE_NAME: !Ref DynamoDBTableName
+#         BUCKET_NAME: !Ref S3BucketName
+#         NODE_ENV: production  ## Dev?
 
 Resources:
   YummiziEngineFunction:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Sub "yummizi-engine-${Environment}"
-      CodeUri: C:/Users/HP/Desktop/Directs/ymz_be_hono/ # Points to the directory containing package.json & src/
+      CodeUri: C:/Users/HP/Desktop/Directs/ymz_be_hono # Points to the directory containing package.json & src/
       Handler: src/index.handler
       Description: Monolithic Hono backend engine
+      Runtime: nodejs24.x
+      Architectures:
+        - arm64 # AWS Graviton2 processor for higher performance and lower cost
+      Timeout: 10 # Seconds
+      MemorySize: 512 # MB
+      Environment:
+        Variables:
+          CDN_DOMAIN: !Ref CloudFrontDomainName
+          ENV: !Ref Environment
+          TABLE_NAME: !Ref DynamoDBTableName
+          BUCKET_NAME: !Ref S3BucketName
+          NODE_ENV: production  ## Dev?
       Policies:
+        - AWSLambdaBasicExecutionRole
         - Statement:
             - Sid: DynamoDBTableAccess
               Effect: Allow
@@ -65,17 +83,68 @@ Resources:
                 - s3:PutObject
                 - s3:GetObject
               Resource: !Sub "${S3BucketArn}/*"
+      # Events block removed entirely
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
         Minify: true
-        Format: "esm"
+        OutExtension:
+          - .js=.cjs
         Target: "node24"
-        Sourcemap: false ## Necessary?
+        Sourcemap: false
         EntryPoints:
           - src/index.ts
-          
+
+  EngineIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref ApiId
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt YummiziEngineFunction.Arn
+      PayloadFormatVersion: "2.0"
+
+  EngineProxyRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref ApiId
+      RouteKey: "ANY /{proxy+}"
+      Target: !Sub "integrations/${EngineIntegration}"
+      AuthorizationType: JWT
+      AuthorizerId: !Ref AuthorizerId
+
+  EngineProxyOptionsRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref ApiId
+      RouteKey: "OPTIONS /{proxy+}"
+      Target: !Sub "integrations/${EngineIntegration}"
+      AuthorizationType: NONE
+
+  EngineRootRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref ApiId
+      RouteKey: "ANY /"
+      Target: !Sub "integrations/${EngineIntegration}"
+      AuthorizationType: JWT
+      AuthorizerId: !Ref AuthorizerId
+
+  EngineRootOptionsRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref ApiId
+      RouteKey: "OPTIONS /"
+      Target: !Sub "integrations/${EngineIntegration}"
+      AuthorizationType: NONE
+
+  YummiziLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref YummiziEngineFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ApiId}/*"
+
 Outputs:
   YummiziFunctionArn:
-    Description: Users Microservice Lambda ARN
     Value: !GetAtt YummiziEngineFunction.Arn

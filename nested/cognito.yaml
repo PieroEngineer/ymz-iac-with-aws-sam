@@ -1,4 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
 Description: Nested Stack - Cognito User Pool & App Client Module
 
 Parameters:
@@ -7,12 +8,47 @@ Parameters:
     Description: Deployment environment (dev, staging, prod)
 
 Resources:
+  # Pre Sign-Up Lambda Function
+  PreSignUpFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "yummizi-pre-signup-${Environment}"
+      CodeUri: C:/Users/HP/Desktop/Directs/ymz_be_hono
+      Handler: src/triggers/presignup.handler
+      Runtime: nodejs24.x
+      Architectures:
+        - arm64 # Shared architecture standard
+      Timeout: 3 # Strict 3-second limit for Cognito synchronous triggers
+      MemorySize: 128 # Minimal 128 MB RAM allocation
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Format: "esm"
+        OutExtension:
+          - .js=.mjs
+        Target: "node24"
+        Sourcemap: false
+        EntryPoints:
+          - src/triggers/presignup.ts
+
+  # Grant Cognito permission to invoke your Lambda function
+  PreSignUpLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref PreSignUpFunction
+      Principal: cognito-idp.amazonaws.com
+      SourceArn: !GetAtt UserPool.Arn
+
   UserPool: # It's always one
     Type: AWS::Cognito::UserPool
     DeletionPolicy: Delete  #ANCHOR: Change "Delete" by "Retain" in production
     UpdateReplacePolicy: Retain
     Properties:
       UserPoolName: !Sub "yummizi-user-pool-${Environment}"
+      LambdaConfig:
+        PreSignUp: !GetAtt PreSignUpFunction.Arn
       UsernameAttributes:
         - email
       AutoVerifiedAttributes:
