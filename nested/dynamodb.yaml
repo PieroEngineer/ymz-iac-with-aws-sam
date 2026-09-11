@@ -42,7 +42,7 @@ Resources:
         - AttributeName: SK
           KeyType: RANGE
       GlobalSecondaryIndexes:
-        - IndexName: !Sub "YummiziGsiTable-${Environment}"
+        - IndexName: !Sub "YummiziGsiTable-${Environment}" # For active requests
           KeySchema:
             - AttributeName: GSIPK
               KeyType: HASH
@@ -53,7 +53,7 @@ Resources:
           ProvisionedThroughput:
             ReadCapacityUnits: 6
             WriteCapacityUnits: 6
-        - IndexName: "YummiziGsi2Table"
+        - IndexName: "YummiziGsi2Table"  # For the feed restaurants      # LAUNCH ANCHOR: -${Environment}"
           KeySchema:
             - AttributeName: GSI2PK
               KeyType: HASH

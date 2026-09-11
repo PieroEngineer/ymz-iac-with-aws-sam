@@ -40,19 +40,10 @@ The --code flag tells SAM to ignore infrastructure changes and only update code 
 ## Cognito  (it should be the policy "DeletionPolicy: Delete")
 aws cloudformation delete-stack --stack-name yummizi-backend
 
-# To test the CORS
+# For tests
 curl -i -X OPTIONS "https://<api-id>.execute-api.us-east-1.amazonaws.com/dev/restaurantProfile" -H "Origin: http://localhost:5173" -H "Access-Control-Request-Method: GET" -H "Access-Control-Request-Headers: authorization,content-type"
-
 
 curl -i https://xwehhxf9wa.execute-api.us-east-1.amazonaws.com/dev/restaurantProfile -H "Authorization: Bearer 123asd"
 
-
-
-
-1. /dist/aws/clientFactory.js is written in CJS, but is interpreted as ESM. Consider using the .cjs extension, e.g. /dist/aws/clientFactory.cjs
-
-2. /dist/routes/requests.js is written in CJS, but is interpreted as ESM. Consider using the .cjs extension, e.g. /dist/routes/requests.cjs
-
-3. /dist/routes/restaurants.js is written in CJS, but is interpreted as ESM. Consider using the .cjs extension, e.g. /dist/routes/restaurants.cjs
-
-4. /dist/scripts/seed.js is written in CJS, but is interpreted as ESM. Consider using the .cjs extension, e.g. /dist/scripts/seed.cjs
+# Describe the some table (It's free)
+aws dynamodb describe-table --table-name YummiziTable --region us-east-1 --query "Table.GlobalSecondaryIndexes[].{Name:IndexName,Status:IndexStatus}"
