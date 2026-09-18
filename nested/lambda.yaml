@@ -75,7 +75,7 @@ Resources:
                 - dynamodb:Query
                 - dynamodb:BatchGetItem
                 - dynamodb:TransactWriteItems
-                # - dynamodb:DeleteItem
+                - dynamodb:DeleteItem
               Resource:
                 - !Ref DynamoDBTableArn
                 - !Sub "${DynamoDBTableArn}/index/*"

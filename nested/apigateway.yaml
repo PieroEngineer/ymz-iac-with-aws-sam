@@ -17,6 +17,7 @@ Resources:
       ProtocolType: HTTP
       CorsConfiguration:
         AllowOrigins:
+          - "https://yummizi.vercel.app"
           - "http://localhost:5173"
         AllowMethods: [GET, POST, PUT, PATCH, DELETE, OPTIONS]
         AllowHeaders: [Authorization, Content-Type]
