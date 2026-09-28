@@ -21,7 +21,7 @@ Resources:
       TableName: "YummiziTable"
       BillingMode: PROVISIONED
       ProvisionedThroughput:
-        ReadCapacityUnits: 13
+        ReadCapacityUnits: 12
         WriteCapacityUnits: 13
       AttributeDefinitions:
         - AttributeName: PK
