@@ -84,6 +84,7 @@ Resources:
               Action:
                 - s3:PutObject
                 - s3:GetObject
+                - s3:DeleteObject # To remove S3 assets too
               Resource: !Sub "${S3BucketArn}/*"
       # Events block removed entirely
     Metadata:
