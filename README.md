@@ -111,4 +111,4 @@ aws cloudformation describe-stacks `
 
 ## Author
 
-Made with 💙 by Piero Olivas
+Made with 💙 by **Piero Olivas Tuesta**
