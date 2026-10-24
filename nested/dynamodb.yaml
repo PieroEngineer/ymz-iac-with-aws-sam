@@ -42,7 +42,9 @@ Resources:
         - AttributeName: SK
           KeyType: RANGE
       GlobalSecondaryIndexes:
-        - IndexName: !Sub "YummiziGsiTable-${Environment}" # For active requests
+        #TODO: GSI for user requests
+
+        - IndexName: !Sub "YummiziGsiTable-${Environment}" # For active requests and orders for restaurant
           KeySchema:
             - AttributeName: GSIPK
               KeyType: HASH
